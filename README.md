@@ -1,4 +1,7 @@
 # hspec-setup
+[![Hackage](https://img.shields.io/hackage/v/hspec-setup.svg)](http://hackage.haskell.org/package/hspec-setup)
+[![Hackage Deps](https://img.shields.io/hackage-deps/v/hspec-setup.svg)](http://hackage.haskell.org/package/hspec-setup)
+- - -
 Add an hspec test-suite in one command
 
 ![](/demo.gif)
