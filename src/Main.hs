@@ -12,13 +12,13 @@ import           System.IO
 import           System.Process
 
 main :: IO ()
-main = do
-    pr <- getProjectRootCurrent
-    fs <- getDirectoryContents pr
-    case find ((".cabal" ==) . takeExtension) fs of
-        Nothing -> error "Couldn't find your cabal file."
-        Just fp -> do
-            hspecSetup pr (pr </> fp)
+main = getProjectRootCurrent >>= \mpr -> case mpr of
+    Nothing -> error "Couldn't find the project root"
+    Just pr -> do
+        fs <- getDirectoryContents pr
+        case find ((".cabal" ==) . takeExtension) fs of
+            Nothing -> error "Couldn't find your cabal file."
+            Just fp -> hspecSetup pr (pr </> fp)
 
 hspecTestSuite :: String
 hspecTestSuite = unlines [ ""
@@ -35,6 +35,7 @@ hspecTestSuite = unlines [ ""
 hspecDiscoveryFile :: String
 hspecDiscoveryFile = "{-# OPTIONS_GHC -F -pgmF hspec-discover #-}"
 
+hspecSanitySpec :: String
 hspecSanitySpec = unlines [ "module SanitySpec where"
                           , ""
                           , "import Test.Hspec"
@@ -46,18 +47,30 @@ hspecSanitySpec = unlines [ "module SanitySpec where"
 hspecSetup :: FilePath -> FilePath -> IO ()
 hspecSetup pr fp = do
     c <- getCurrentDirectory
+
     putStrLn $ "Adding test-suite to " <> makeRelative c fp <> "..."
     cabalContents <- readFile fp
+
     when ("type: exitcode-stdio-1.0" `isInfixOf` cabalContents) $ do
         hPutStrLn stderr "File already has test-suite. Exiting..."
         exitFailure
     appendFile fp hspecTestSuite
+
     putStrLn "Creating test directory..."
     createDirectoryIfMissing False (pr </> "test")
+
     putStrLn "Creating test/Spec.hs discovery file..."
     writeFile (pr </> "test" </> "Spec.hs") hspecDiscoveryFile
+
     putStrLn "Creating test/SanitySpec.hs..."
     writeFile (pr </> "test" </> "SanitySpec.hs") hspecSanitySpec
+
+    stackInited <- doesFileExist (pr </> "stack.yaml")
+    unless stackInited $ do
+        putStrLn "No `stack.yaml` found. Running `stack init` for you..."
+        callCommand "stack init"
+
     putStrLn "Running tests for the first time..."
     callCommand "stack test"
+
     return ()
