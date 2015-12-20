@@ -1,5 +1,5 @@
 name:                hspec-setup
-version:             0.1.0.0
+version:             0.1.1.0
 synopsis:            Add an hspec test-suite in one command
 description: @hspec-setup@ is a command-line tool for adding an hspec
              test-suite with minimal work. See the
