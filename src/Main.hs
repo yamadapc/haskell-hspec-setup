@@ -1,24 +1,57 @@
+{-# LANGUAGE LambdaCase #-}
 module Main
   where
 
 import           Control.Monad
 import           Data.List
+import           Data.Maybe
 import           Data.Monoid
 import           System.Directory
 import           System.Directory.ProjectRoot
+import           System.Directory.Recursive
+import           System.Environment
 import           System.Exit
 import           System.FilePath
 import           System.IO
 import           System.Process
 
+headMaybe [] = Nothing
+headMaybe (x:_) = Just x
+
+type Options = (FilePath, FilePath)
+
+getData :: IO (Either String Options)
+getData = getProjectRootCurrent >>=
+    \case
+        Nothing -> return $ Left "Couldn't find the project root"
+        Just pr -> do
+            fs <- getDirectoryContents pr
+            case find ((".cabal" ==) . takeExtension) fs of
+                Nothing -> return $ Left "Couldn't find your cabal file"
+                Just fp -> return $ Right (pr, fp)
+
 main :: IO ()
-main = getProjectRootCurrent >>= \mpr -> case mpr of
-    Nothing -> error "Couldn't find the project root"
-    Just pr -> do
-        fs <- getDirectoryContents pr
-        case find ((".cabal" ==) . takeExtension) fs of
-            Nothing -> error "Couldn't find your cabal file."
-            Just fp -> hspecSetup pr (pr </> fp)
+main = do
+    mfp <- getData
+    case mfp of
+        Left err -> panic err
+        Right fp -> do
+            -- ert <-
+                executeCommand fp
+            -- case ert of
+            --     Left err -> panic err
+            --     Right _ -> return ()
+  where
+    panic err = do
+        hPutStrLn stderr err
+        exitFailure
+    executeCommand (pr, fp) = do
+        a <- headMaybe <$> getArgs
+        case a of
+            Just "--generate" -> do
+                r <- getDirectoryContentsRecursive fp
+                print r
+            _ -> hspecSetup pr (pr </> fp)
 
 hspecTestSuite :: String
 hspecTestSuite = unlines [ ""
