@@ -35,12 +35,7 @@ main = do
     mfp <- getData
     case mfp of
         Left err -> panic err
-        Right fp -> do
-            -- ert <-
-                executeCommand fp
-            -- case ert of
-            --     Left err -> panic err
-            --     Right _ -> return ()
+        Right fp -> executeCommand fp
   where
     panic err = do
         hPutStrLn stderr err
@@ -49,9 +44,18 @@ main = do
         a <- headMaybe <$> getArgs
         case a of
             Just "--generate" -> do
-                r <- getDirectoryContentsRecursive fp
-                print r
+                _ :/ tree <- getDirectoryContentsRecursive pr
+                putDoc (pretty (filterDir isHaskellSource tree))
+                putStrLn ""
+                putStr "What file would you like test-suites on? "
+                hFlush stdout
+                l <- getLine
+                print ("test" </> (dropExtension l ++ "Spec.hs"))
             _ -> hspecSetup pr (pr </> fp)
+
+-- printTree (Dir dn ds) = do
+--     putStr "-> "
+--     putStr dn
 
 hspecTestSuite :: String
 hspecTestSuite = unlines [ ""
