@@ -91,6 +91,7 @@ hspecSetup pr fp = do
     when ("type: exitcode-stdio-1.0" `isInfixOf` cabalContents) $ do
         hPutStrLn stderr "File already has test-suite. Exiting..."
         exitFailure
+
     appendFile fp hspecTestSuite
 
     putStrLn "Creating test directory..."
