@@ -22,18 +22,24 @@ tested-with: ghc >=7.10
 dependencies:
 - ansi-wl-pprint
 - pretty >=1.1.2.0
+- base >=4 && <5
+- directory
+- directory-tree
+- filepath
+- process >=1.2
+- projectroot >=0.2
+
+library:
+  source-dirs: src
+  exposed-modules:
+  - Test.Hspec.Setup
 
 executables:
   hspec-setup:
     main: Main.hs
-    source-dirs: src
+    source-dirs: bin
     dependencies:
-    - base >=4 && <5
-    - directory
-    - directory-tree
-    - filepath
-    - process >=1.2
-    - projectroot >=0.2
+      hspec-setup
 
 tests:
   hspec:
