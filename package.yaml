@@ -17,7 +17,6 @@ homepage: https://github.com/yamadapc/haskell-hspec-setup
 git: git://github.com/yamadapc/haskell-hspec-setup
 extra-source-files:
 - README.md
-tested-with: ghc>=7.10
 
 dependencies:
 - ansi-wl-pprint
