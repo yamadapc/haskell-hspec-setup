@@ -74,8 +74,8 @@ test-suite hspec
     , filepath
     , process >=1.2
     , projectroot >=0.2
-    , language-dockerfile
     , QuickCheck
+    , language-dockerfile >=0.3.4
     , base
     , hspec
   other-modules:

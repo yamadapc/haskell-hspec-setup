@@ -1,0 +1,3 @@
+[submodule "vendor/language-dockerfile"]
+	path = vendor/language-dockerfile
+	url = https://github.com/beijaflor-io/haskell-language-dockerfile
