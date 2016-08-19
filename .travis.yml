@@ -1,6 +1,7 @@
-# This file has been generated -- see https://github.com/hvr/multi-ghc-travis
-language: c
+dist: trusty
 sudo: required
+
+language: c
 
 services:
   - docker
