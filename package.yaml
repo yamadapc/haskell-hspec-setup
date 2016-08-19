@@ -49,6 +49,7 @@ tests:
     - QuickCheck
     - language-dockerfile >=0.3.4
     - base
+    - directory
     - bytestring
     - cryptohash
     - hspec
