@@ -28,21 +28,28 @@ main = do
     executeCommand (pr, fp) = do
         a <- headMaybe <$> getArgs
         case a of
-            Just "--generate" -> do
-                _ :/ tree <- getDirectoryContentsRecursive pr
-                putDoc (pretty (filterDir isHaskellSource tree))
-                putStrLn ""
-                putStr "What file would you like test-suites on? "
-                hFlush stdout
-                l <- getLine
-                print ("test" </> (dropExtension l ++ "Spec.hs"))
-            _ -> hspecSetup pr (pr </> fp)
+            Just "--generate" -> error "Not implemented"
+                -- _ :/ tree <- getDirectoryContentsRecursive pr
+                -- putDoc (pretty (filterDir isHaskellSource tree))
+                -- putStrLn ""
+                -- putStr "What file would you like test-suites on? "
+                -- hFlush stdout
+                -- l <- getLine
+                -- print ("test" </> (dropExtension l ++ "Spec.hs"))
+            _ -> hspecSetup pr fp
 
 headMaybe :: [a] -> Maybe a
 headMaybe [] = Nothing
 headMaybe (x:_) = Just x
 
-type Options = (FilePath, FilePath)
+data ManifestFilePath = CabalFile FilePath
+                      | HpackFile FilePath
+
+unManifestFilePath :: ManifestFilePath -> FilePath
+unManifestFilePath (CabalFile fp) = fp
+unManifestFilePath (HpackFile fp) = fp
+
+type Options = (FilePath, ManifestFilePath)
 
 getData :: IO (Either String Options)
 getData = getProjectRootCurrent >>=
@@ -50,9 +57,12 @@ getData = getProjectRootCurrent >>=
         Nothing -> return $ Left "Couldn't find the project root"
         Just pr -> do
             fs <- getDirectoryContents pr
-            case find ((".cabal" ==) . takeExtension) fs of
-                Nothing -> return $ Left "Couldn't find your cabal file"
-                Just fp -> return $ Right (pr, fp)
+            case find ("package.yaml" ==) fs of
+                Just fp -> return $ Right (pr, HpackFile fp)
+                Nothing -> case find ((".cabal" ==) . takeExtension) fs of
+                    Just fp -> return $ Right (pr, CabalFile fp)
+                    Nothing -> return $ Left
+                        "Couldn't find your package manifest file (package.yaml/*.cabal)"
 
 
 hspecTestSuite :: String
@@ -67,6 +77,18 @@ hspecTestSuite = unlines [ ""
                          , "  default-language: Haskell2010"
                          ]
 
+hspecHpackTestSuite :: String
+hspecHpackTestSuite = unlines [ ""
+                              , "tests:"
+                              , "  hspec:"
+                              , "    main: Spec.hs"
+                              , "    source-dirs: test"
+                              , "    dependencies:"
+                              , "    - base"
+                              , "    - hspec"
+                              , "    - QuickCheck"
+                              ]
+
 hspecDiscoveryFile :: String
 hspecDiscoveryFile = "{-# OPTIONS_GHC -F -pgmF hspec-discover #-}"
 
@@ -79,18 +101,15 @@ hspecSanitySpec = unlines [ "module SanitySpec where"
                           , "    it \"I have sanity\" $ True `shouldBe` True"
                           ]
 
-hspecSetup :: FilePath -> FilePath -> IO ()
-hspecSetup pr fp = do
+hspecSetup :: FilePath -> ManifestFilePath -> IO ()
+hspecSetup pr mfp = do
+    let fp = unManifestFilePath mfp
+
     c <- getCurrentDirectory
 
     putStrLn $ "Adding test-suite to " <> makeRelative c fp <> "..."
-    cabalContents <- readFile fp
 
-    when ("type: exitcode-stdio-1.0" `isInfixOf` cabalContents) $ do
-        hPutStrLn stderr "File already has test-suite. Exiting..."
-        exitFailure
-
-    appendFile fp hspecTestSuite
+    appendHspecSuite pr mfp
 
     putStrLn "Creating test directory..."
     createDirectoryIfMissing False (pr </> "test")
@@ -110,3 +129,30 @@ hspecSetup pr fp = do
     callCommand "stack test"
 
     return ()
+
+appendHspecSuite :: FilePath -> ManifestFilePath -> IO ()
+appendHspecSuite pr (HpackFile fp) = do
+    hpackContents <- readFile (pr </> fp)
+    let hpackLines = lines hpackContents
+        mi = elemIndex "tests:" hpackLines
+    case mi of
+        Nothing -> do
+            when ("hspec" `isInfixOf` hpackContents) $ do
+                hPutStrLn stderr "File already has test-suite. Exiting..."
+                exitFailure
+            appendFile (pr </> fp) hspecHpackTestSuite
+        Just i -> do
+            let (beforeTests, afterTests) = splitAt i hpackLines :: ([String], [String])
+            writeFile (pr </> fp) $ unlines [ unlines beforeTests
+                                            , unlines (drop 1 (lines hspecHpackTestSuite))
+                                            , unlines afterTests
+                                            ]
+appendHspecSuite pr (CabalFile fp) = do
+    cabalContents <- readFile (pr </> fp)
+
+    when ("type: exitcode-stdio-1.0" `isInfixOf` cabalContents) $ do
+        hPutStrLn stderr "File already has test-suite. Exiting..."
+        exitFailure
+
+    appendFile (pr </> fp) hspecTestSuite
+
