@@ -1,6 +1,6 @@
 # This file has been generated -- see https://github.com/hvr/multi-ghc-travis
 language: c
-sudo: true
+sudo: required
 
 services:
   - docker
@@ -33,6 +33,7 @@ matrix:
     - env: CABALVER=head GHCVER=head
 
 before_install:
+ - docker version
  - unset CC
  - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.cabal/bin:$PATH
 
