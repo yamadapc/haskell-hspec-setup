@@ -2,7 +2,6 @@ flags: {}
 extra-package-dbs: []
 packages:
 - '.'
-- ./vendor/language-dockerfile
 extra-deps:
 - ShellCheck-0.4.4
 - hspec-setup-0.1.1.1
