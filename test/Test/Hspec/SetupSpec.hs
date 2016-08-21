@@ -67,14 +67,12 @@ dockerRun imgName = callCommand $ "docker run --rm " <> imgName
 
 withImage :: EDockerfileM () -> (String -> IO b) -> IO b
 withImage img action = do
-    callCommand $ unwords [ "docker images |"
-                          , "grep hspec-setup-tests-autogen |"
-                          , "awk '{print $3}' |"
-                          , "tail -n +3 |"
-                          , "while read p; do"
-                          , "docker rmi -f $p;"
-                          , "done"
-                          ]
+    {-callCommand $ unwords [ "docker images |"-}
+                          {-, "grep hspec-setup-tests-autogen |"-}
+                          {-, "awk '{print $3}' |"-}
+                          {-, "tail -n +3 |"-}
+                          {-, "xargs docker rmi -f"-}
+                          {-]-}
     bracket
         (dockerBuild img)
         (const (return ()))
