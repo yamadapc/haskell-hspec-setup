@@ -71,7 +71,9 @@ withImage img action = do
                           , "grep hspec-setup-tests-autogen |"
                           , "awk '{print $3}' |"
                           , "tail -n +3 |"
-                          , "xargs docker rmi -f"
+                          , "while read p; do"
+                          , "docker rmi -f $p;"
+                          , "done"
                           ]
     bracket
         (dockerBuild img)
