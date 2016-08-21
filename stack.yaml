@@ -4,6 +4,7 @@ packages:
 - '.'
 extra-deps:
 - ShellCheck-0.4.4
-- hspec-setup-0.1.1.1
+- haskell-src-exts-1.18.2
+- hspec-setup-0.1.2.0
 - language-dockerfile-0.3.4.0
 resolver: lts-6.3

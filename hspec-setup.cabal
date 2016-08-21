@@ -38,10 +38,12 @@ library
     , filepath
     , process >=1.2
     , projectroot >=0.2
+    , haskell-src-exts >=1.18.2 && <1.19
+    , split
   exposed-modules:
       Test.Hspec.Setup
-  other-modules:
       System.Directory.Recursive
+  other-modules:
       Paths_hspec_setup
   default-language: Haskell2010
 
@@ -56,6 +58,8 @@ executable hspec-setup
     , filepath
     , process >=1.2
     , projectroot >=0.2
+    , haskell-src-exts >=1.18.2 && <1.19
+    , split
     , hspec-setup
   hs-source-dirs:
       bin
@@ -73,6 +77,8 @@ test-suite hspec
     , filepath
     , process >=1.2
     , projectroot >=0.2
+    , haskell-src-exts >=1.18.2 && <1.19
+    , split
     , QuickCheck
     , language-dockerfile >=0.3.4
     , base
@@ -80,8 +86,10 @@ test-suite hspec
     , bytestring
     , cryptohash
     , hspec
+    , hspec-setup
   other-modules:
       SanitySpec
+      System.Directory.RecursiveSpec
       Test.Hspec.SetupSpec
   hs-source-dirs:
       test

@@ -1,10 +1,13 @@
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase  #-}
 module Test.Hspec.Setup
   where
 
 import           Control.Monad
 import           Data.List
+import           Data.List.Split
+import           Data.Maybe
 import           Data.Monoid
+import           Language.Haskell.Exts
 import           System.Directory
 import           System.Directory.ProjectRoot
 import           System.Directory.Recursive
@@ -13,7 +16,6 @@ import           System.Exit
 import           System.FilePath
 import           System.IO
 import           System.Process
-
 
 main :: IO ()
 main = do
@@ -26,21 +28,16 @@ main = do
         hPutStrLn stderr e
         exitFailure
     executeCommand (pr, fp) = do
-        a <- headMaybe <$> getArgs
-        case a of
-            Just "--generate" -> error "Not implemented"
-                -- _ :/ tree <- getDirectoryContentsRecursive pr
-                -- putDoc (pretty (filterDir isHaskellSource tree))
-                -- putStrLn ""
-                -- putStr "What file would you like test-suites on? "
-                -- hFlush stdout
-                -- l <- getLine
-                -- print ("test" </> (dropExtension l ++ "Spec.hs"))
-            _ -> hspecSetup pr fp
-
-headMaybe :: [a] -> Maybe a
-headMaybe [] = Nothing
-headMaybe (x:_) = Just x
+        as <- getArgs
+        case as of
+            ("--generate":rest) -> hspecGenerate pr (listToMaybe rest)
+            ("-g":rest) -> hspecGenerate pr (listToMaybe rest)
+            [] -> hspecSetup pr fp
+            _ -> error $ unlines [ "Usage: hspec-setup [-g|--generate]"
+                                 , "    hspec-setup                   Adds a test-suite to your project"
+                                 , "    hspec-setup --generate [fp]   Generates tests for a certain module"
+                                 , "    hspec-setup -g"
+                                 ]
 
 data ManifestFilePath = CabalFile FilePath
                       | HpackFile FilePath
@@ -100,6 +97,57 @@ hspecSanitySpec = unlines [ "module SanitySpec where"
                           , "spec = describe \"when I have tests\" $"
                           , "    it \"I have sanity\" $ True `shouldBe` True"
                           ]
+
+hspecGenerate :: FilePath -> Maybe FilePath -> IO ()
+hspecGenerate pr (Just target) = parseFile target >>= \case
+    ParseOk (Module _ (Just (ModuleHead _ (ModuleName _ moduleName) _ (Just (ExportSpecList _ exportSpecs)))) _ _ _) ->
+        go moduleName (exportsFromSpecs exportSpecs)
+    ParseOk (Module _ (Just (ModuleHead _ (ModuleName _ moduleName) _ Nothing)) _ _ moduleDecls) ->
+        go moduleName (exportsFromDecls moduleDecls)
+    ParseOk (Module l Nothing _ _ moduleDecls) -> error (target <> " needs a `module` name")
+    ParseOk h -> error ("Don't know how to generate code from" <> (show h))
+    e -> error (show e)
+  where
+    exportsFromSpecs = mapMaybe mexportFromSpec
+      where
+        mexportFromSpec (EVar _ (UnQual _ n)) = Just (prettyPrint n)
+        mexportFromSpec _ = Nothing
+    exportsFromDecls = mapMaybe mexportFromDecl
+      where
+        mexportFromDecl (FunBind _ ((Match _ n _ _ _):_)) = Just (prettyPrint n)
+        mexportFromDecl _ = Nothing
+    go :: String -> [String] -> IO ()
+    go moduleName moduleExports = do
+        let moduleNameFp = (foldl (</>) "./test" $ splitOn "." (moduleName <> "Spec")) <> ".hs"
+            moduleNameFallbackFp = (foldl (</>) "./test" $ splitOn "." (moduleName <> "AutogenSpec")) <> ".hs"
+            testSuite mn = init $ unlines $
+                        [ "module " <> mn <> " where"
+                        , ""
+                        , "import           " <> moduleName
+                        , ""
+                        , "import           Test.Hspec"
+                        , ""
+                        , "spec :: Spec"
+                        , "spec = do"
+                        ] <> concatMap decToDescribe moduleExports
+
+        createDirectoryIfMissing True (takeDirectory moduleNameFp)
+        e <- doesFileExist moduleNameFp
+
+        when e $ do
+            hPutStrLn stderr ("Refusing to overwrite " <> moduleNameFp)
+            hPutStrLn stderr "Wrote test-suite to:"
+            putStrLn moduleNameFallbackFp
+            writeFile moduleNameFallbackFp (testSuite (moduleName <> "AutogenSpec"))
+            exitSuccess
+
+        writeFile moduleNameFp (testSuite (moduleName <> "Spec"))
+      where
+        decToDescribe decName = [
+            "    describe \"" <> decName <> "\" $ do"
+          , "        it \"works\" pending"
+                                ]
+hspecGenerate pr Nothing = error "Interactive mode not implemented"
 
 hspecSetup :: FilePath -> ManifestFilePath -> IO ()
 hspecSetup pr mfp = do
