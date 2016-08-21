@@ -36,6 +36,9 @@ newProjectImage = do
     run "stack init"
     run "stack build"
 
+eitherToMaybe (Left _) = Nothing
+eitherToMaybe (Right r) = r
+
 -- | Builds the image defined in this EDockerfileM block by writting it to a
 -- temporary file
 dockerBuild :: EDockerfileM () -> IO String
@@ -45,8 +48,9 @@ dockerBuild img = do
         imgHash = show (hash (ByteString.pack imgStr) :: Digest MD5)
         imgName = imgPre <> ":" <> imgHash
         imgFp = "./" <> imgPre <> "." <> imgHash <> ".dockerfile"
-    mimg <- fmap (take 2) . listToMaybe . map words . lines <$>
-            readCreateProcess (shell ("docker images | grep " <> imgPre)) ""
+    mimg <- eitherToMaybe <$> (try (
+            fmap (take 2) . listToMaybe . map words . lines <$>
+            readCreateProcess (shell ("docker images | grep " <> imgPre)) "") :: IO (Either SomeException (Maybe [String])))
             :: IO (Maybe [String])
 
     -- print mimg
