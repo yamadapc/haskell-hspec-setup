@@ -19,3 +19,4 @@ cabal.sandbox.config
 *.hp
 .stack-work/
 hspec-setup-tests-autogen.*.dockerfile
+.stack-fpm
