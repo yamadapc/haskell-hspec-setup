@@ -1,6 +1,8 @@
-{-# LANGUAGE LambdaCase  #-}
+{-# LANGUAGE LambdaCase #-}
 module Test.Hspec.Setup
   where
+
+import           Prelude                      hiding (readFile)
 
 import           Control.Monad
 import           Data.List
@@ -14,7 +16,8 @@ import           System.Directory.Recursive
 import           System.Environment
 import           System.Exit
 import           System.FilePath
-import           System.IO
+import           System.IO                    hiding (readFile)
+import           System.IO.Strict             (readFile)
 import           System.Process
 
 main :: IO ()

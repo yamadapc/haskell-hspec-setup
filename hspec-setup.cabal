@@ -40,6 +40,7 @@ library
     , projectroot >=0.2
     , haskell-src-exts >=1.18.2 && <1.19
     , split
+    , strict
   exposed-modules:
       Test.Hspec.Setup
       System.Directory.Recursive
@@ -60,6 +61,7 @@ executable hspec-setup
     , projectroot >=0.2
     , haskell-src-exts >=1.18.2 && <1.19
     , split
+    , strict
     , hspec-setup
   hs-source-dirs:
       bin
@@ -79,6 +81,7 @@ test-suite hspec
     , projectroot >=0.2
     , haskell-src-exts >=1.18.2 && <1.19
     , split
+    , strict
     , QuickCheck
     , language-dockerfile >=0.3.4
     , base
