@@ -188,7 +188,7 @@ appendHspecSuite pr (HpackFile fp) = do
         mi = elemIndex "tests:" hpackLines
     case mi of
         Nothing -> do
-            when ("hspec" `isInfixOf` hpackContents) $ do
+            when ("hspec:" `isInfixOf` hpackContents) $ do
                 hPutStrLn stderr "File already has test-suite. Exiting..."
                 exitFailure
             appendFile (pr </> fp) hspecHpackTestSuite
