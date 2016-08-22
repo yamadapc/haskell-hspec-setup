@@ -148,7 +148,7 @@ hspecGenerate pr (Just target) = parseFile target >>= \case
       where
         decToDescribe decName = [
             "    describe \"" <> decName <> "\" $ do"
-          , "        it \"works\" pending"
+          , "        it \"works\" pending\n"
                                 ]
 hspecGenerate pr Nothing = error "Interactive mode not implemented"
 
