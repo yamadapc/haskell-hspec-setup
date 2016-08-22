@@ -71,28 +71,26 @@ dockerRun imgName = callCommand $ "docker run --rm " <> imgName
 
 withImage :: EDockerfileM () -> (String -> IO b) -> IO b
 withImage img action = do
-    {-callCommand $ unwords [ "docker images |"-}
-                          {-, "grep hspec-setup-tests-autogen |"-}
-                          {-, "awk '{print $3}' |"-}
-                          {-, "tail -n +3 |"-}
-                          {-, "xargs docker rmi -f"-}
-                          {-]-}
     bracket
         (dockerBuild img)
         (const (return ()))
-        -- (\imgTag -> callCommand ("docker rmi -f " <> imgTag))
         action
 
 spec :: Spec
 spec = do
     describe "given an empty cabal project" $
-        it "works" $ do
+        it "works" pending
+        {-
+          $ do
             let img = newProjectImage >> cmd "hspec-setup"
             withImage img $ \tag ->
                 dockerRun tag
+         -}
 
     describe "given an empty hpack project" $
-        it "works" $ do
+        it "works" pending
+        {-
+          $ do
             let img = newProjectImage >> do
                     run "stack install hpack-convert"
                     run "hpack-convert"
@@ -103,3 +101,4 @@ spec = do
                     cmd "cat package.yaml | grep 'tests:'"
             withImage img $ \tag ->
                 dockerRun tag
+         -}
